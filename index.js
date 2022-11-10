@@ -77,6 +77,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`gcb-accounting server running on ${port}`);
 })
-
-// hello hi 7
-// jello vio 6
