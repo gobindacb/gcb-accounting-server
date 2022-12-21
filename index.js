@@ -18,20 +18,34 @@ async function run() {
         const serviceCollection = client.db('gcbAccounting').collection('services');
         const reviewCollection = client.db('gcbAccounting').collection('reviews');
 
+        app.post('/services', async (req, res) => {
+            const service = req.body;
+            const result = await serviceCollection.insertOne(service);
+            res.send(result);
+        });
+
         app.get('/services', async (req, res) => {
+            const date = new Date();
             const query = {}
-            const cursor = serviceCollection.find(query);
+            const cursor = serviceCollection.find(query).sort({ date: 1 });
             const services = await cursor.toArray();
             res.send(services);
         })
 
         app.get('/services/:id', async (req, res) => {
             const id = req.params.id
-            console.log(id)
+            // console.log(id)
             const query = { _id: ObjectId(id) };
             const service = await serviceCollection.findOne(query);
             res.send(service);
         });
+
+        app.get('/reviews/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) };
+            const review = await reviewCollection.findOne(query);
+            res.send(review);
+        })
 
         app.get('/reviews', async (req, res) => {
             let query = {};
@@ -41,17 +55,74 @@ async function run() {
                 }
             }
 
-            const cursor = reviewCollection.find(query);
+            const cursor = reviewCollection.find(query).sort({ date: -1 });
             const reviews = await cursor.toArray();
             // const reviews = await reviewCollection.find(query).toArray();
             res.send(reviews);
             // console.log(reviews)
+        });
+
+        app.get('/service', async (req, res) => {
+            let query = {};
+            if (req.query.id) {
+                query = {
+                    id: req.query.id
+                }
+            }
+            const cursor = reviewCollection.find(query);
+            const service = await cursor.toArray();
+            res.send(service);
+            console.log(service)
         })
+
+
 
         app.post('/reviews', async (req, res) => {
             const review = req.body;
             const result = await reviewCollection.insertOne(review);
             res.send(result);
+        });
+
+        app.get('/reviews/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                const reviews = await reviews.findOne({ _id: ObjectId(id) });
+                req.send({
+                    success: true,
+                    data: reviews
+                });
+
+            } catch (error) {
+                res.send({
+                    success: false,
+                    error: error.message
+                });
+            }
+        });
+
+
+        app.patch('/reviews/:id', async (req, res) => {
+            const { id } = req.params;
+            try {
+                const result = await reviews.updateOne({ _id: ObjectId(id) }, { $set: req.body });
+
+                if (result.matchedCount) {
+                    res.send({
+                        success: true,
+                        message: 'Successfully Edited'
+                    });
+                } else {
+                    res.send({
+                        success: false,
+                        error: "Couldnt edit the review",
+                    })
+                }
+            } catch (error) {
+                res.send({
+                    success: false,
+                    error: error.message,
+                });
+            }
         });
 
         app.delete('/reviews/:id', async (req, res) => {
